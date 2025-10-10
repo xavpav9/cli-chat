@@ -1,8 +1,10 @@
-import socket, sys, re
+import socket, sys, re, readline, os
+from threading import Thread
 
 #Usage - python(3) server.py ip port
 
 HEADERSIZE = 5
+messages = []
 
 if len(sys.argv) != 3:
     print("Must provide IP address and port number.")
@@ -52,21 +54,39 @@ def decodeMessage(conn):
 
     return text.decode(encoding="UTF-8")
 
+def outputMessages():
+    global connected
+    while connected:
+        username = decodeMessage(sock)
+        if username != None:
+            data = decodeMessage(sock)
+            messages.append(f"{username}>: {data}")
+            refreshDisplay(readline.get_line_buffer())
+        else:
+            print("Connection has been terminated")
+            connected = False
+
+def refreshDisplay(currentLine):
+    os.system("clear") 
+    for msg in messages:
+        print(msg)
+    print(currentLine, end="", flush=True)
+
+
 sock.connect((ip, port))
+connected = True
 
 sock.send(createPacket(username).encode(encoding="UTF-8"))
 
-while True:
+outputThread = Thread(target=outputMessages)
+outputThread.start()
+
+while connected:
     msg = input()
     if msg != "":
-        print(f"{username}>: {msg}")
+        messages.append(f"{username}>: {msg}")
+        refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
 
-    username = decodeMessage(sock)
-    if username != None:
-        data = decodeMessage(sock)
-        print(f"{username}>: {data}")
-    else:
-        print("Connection has been terminated")
-        break
+outputThread.join()
 sock.close()
