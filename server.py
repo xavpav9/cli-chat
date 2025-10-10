@@ -115,8 +115,8 @@ def main():
                 if data == None:
                     removeConn(conn)
                 elif "username" in connections[conn].keys():
-                    log(f"{data} from {connections[conn]["address"]}")
-                    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]["username"]} |=> Message: {data}"
+                    log(f"{data} from {connections[conn]['address']}")
+                    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]['username']} |=> Message: {data}"
                     logMsg(logMessage)
 
                     for otherConn in connections.keys():
@@ -124,7 +124,7 @@ def main():
                             otherConn.send(createMessage(connections[conn]["username"], data))
                 else:
                     username = data
-                    log(f"Username: {username} for {connections[conn]["address"]}")
+                    log(f"Username: {username} for {connections[conn]['address']}")
 
                     usernames = []
                     for c in list(connections.keys())[1:]:
@@ -135,7 +135,7 @@ def main():
                         conn.send(createMessage("s", "Invalid username."))
                         removeConn(conn)
                     elif username in usernames:
-                        conn.send(createMessage("s", f"Usernames in use: {", ".join(usernames)}."))
+                        conn.send(createMessage("s", f"Usernames in use: {', '.join(usernames)}."))
                         removeConn(conn)
                     else:
                         connections[conn]["username"] = username
@@ -186,7 +186,7 @@ if interactive:
                             username = connections[conn]["username"]
                         else:
                             username = None
-                        print(f"Username: \"{username}\", Address: {connections[conn]["address"]}")
+                        print(f"Username: \"{username}\", Address: {connections[conn]['address']}")
                 else:
                     print(None)
             case "stalk":
