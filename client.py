@@ -66,7 +66,6 @@ def outputMessages():
         else:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
-            sock.send(b"")
 
 def refreshDisplay(currentLine):
     os.system("clear") 
