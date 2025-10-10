@@ -1,6 +1,10 @@
 import socket, sys, re, select
+from threading import Thread
     
 #Usage - python(3) server.py ip port
+
+interactive = input("Would you like the server to be interactive (y/n)?: ").lower()
+interactive = interactive == "y"
 
 HEADERSIZE = 5
 
@@ -40,7 +44,7 @@ def removeConn(conn):
     conn.shutdown(2)
     conn.close()
     connections.pop(conn)
-    print(f"Terminated connection: {conn}")
+    log(f"Terminated connection: {conn}")
 
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
@@ -64,45 +68,78 @@ def decodeMessage(conn):
     return text.decode(encoding="UTF-8")
 
 
-while True:
-    try:
-        connsToRead, connsToWrite, connsInError = select.select(connections.keys(), [], connections.keys())
-    except Exception as error:
-        connError = False
-        for conn in connections.keys():
-            if conn.fileno() == -1:
-                removeConn(conn)
-                connError = True
+def main():
+    while True:
+        try:
+            connsToRead, connsToWrite, connsInError = select.select(connections.keys(), [], connections.keys())
+        except Exception as error:
+            connError = False
+            for conn in connections.keys():
+                if conn.fileno() == -1:
+                    removeConn(conn)
+                    connError = True
 
-        if connError:
-            continue
-        else:
-            sys.exit()
-
-    for conn in connsInError:
-        removeConn(conn)
-
-    for conn in connsToRead:
-        if conn == sock:
-            conn, addr = sock.accept()
-            print(f"New connection: {addr}")
-            connections[conn] = {"address": addr}
-        else:
-            data = decodeMessage(conn)
-            if data == None:
-                removeConn(conn)
-            elif "username" in connections[conn].keys():
-                print(f"{data} from {connections[conn]["address"]}")
-
-                packet = createMessage(connections[conn]["username"], data)
-
-                for otherConn in connections.keys():
-                    if otherConn != sock and otherConn != conn:
-                        otherConn.send(createMessage(connections[conn]["username"], data))
+            if connError:
+                continue
             else:
-                username = data
-                print(f"Username: {username} for {connections[conn]["address"]}")
-                if len(username) < 2 or len(username) > 15:
-                    conn.send(b"Invalid username.")
+                sys.exit()
+
+        for conn in connsInError:
+            removeConn(conn)
+
+        for conn in connsToRead:
+            if conn == sock:
+                conn, addr = sock.accept()
+                log(f"New connection: {addr}")
+                connections[conn] = {"address": addr}
+            else:
+                data = decodeMessage(conn)
+                if data == None:
+                    removeConn(conn)
+                elif "username" in connections[conn].keys():
+                    log(f"{data} from {connections[conn]["address"]}")
+
+                    packet = createMessage(connections[conn]["username"], data)
+
+                    for otherConn in connections.keys():
+                        if otherConn != sock and otherConn != conn:
+                            otherConn.send(createMessage(connections[conn]["username"], data))
                 else:
-                    connections[conn]["username"] = username
+                    username = data
+                    log(f"Username: {username} for {connections[conn]["address"]}")
+                    if len(username) < 2 or len(username) > 15:
+                        conn.send(b"Invalid username.")
+                    else:
+                        connections[conn]["username"] = username
+
+def log(msg):
+    if not interactive:
+        print(msg)
+
+if interactive:
+    mainThread = Thread(target=main)
+    mainThread.start()
+    print("Enter h for help")
+    while True:
+        command = input("> ")
+        match command:
+            case "h":
+                print("lc = list connections\nla = list connections by username and address")
+            case "lc":
+                print(f"socket: {list(connections.keys())[0]}")
+                if len(connections) > 1:
+                    for conn in list(connections.keys())[1:]:
+                        print(conn)
+            case "la":
+                if len(connections) > 1:
+                    for conn in list(connections.keys())[1:]:
+                        print(f"Username: \"{connections[conn]["username"]}\", Address: {connections[conn]["address"]}")
+                else:
+                    print(None)
+            case _:
+                print("Command not found") 
+        
+
+    mainThread.join()
+else:
+    main()
