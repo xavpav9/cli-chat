@@ -128,8 +128,8 @@ if interactive:
     while True:
         command = input("> ")
         match command:
-            case "h":
-                print("lc = list connections\nla = list connections by username and address\nstalk = send out a message as the server")
+            case "h" | "help":
+                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\n")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
