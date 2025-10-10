@@ -1,4 +1,4 @@
-import socket, sys, re, select
+import socket, sys, re, select, datetime
 from threading import Thread
     
 #Usage - python(3) server.py ip port
@@ -39,6 +39,12 @@ sock.bind((ip, port))
 
 connections = {sock: {}}
 sock.listen(5)
+
+messageLog = []
+try:
+    open("log.txt", "x")
+except:
+    pass
 
 def removeConn(conn):
     try:
@@ -104,6 +110,20 @@ def main():
                     removeConn(conn)
                 elif "username" in connections[conn].keys():
                     log(f"{data} from {connections[conn]["address"]}")
+                    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]["username"]} |=> Message {data}"
+                    messageLog.append(logMessage)
+                    with open("log.txt", "r") as file:
+                        lines = file.readlines()
+                        file.close()
+
+                    for i in range(len(lines)):
+                        lines[i] = lines[i].strip("\n")
+
+                    lines.append(logMessage)
+
+                    with open("log.txt", "w") as file:
+                        file.write("\n".join(lines))
+                        file.close()
 
                     for otherConn in connections.keys():
                         if otherConn != sock and otherConn != conn:
@@ -111,8 +131,17 @@ def main():
                 else:
                     username = data
                     log(f"Username: {username} for {connections[conn]["address"]}")
+
+                    usernames = []
+                    for c in list(connections.keys())[1:]:
+                        if "username" in connections[c].keys():
+                            usernames.append(connections[c]["username"])
+
                     if len(username) < 2 or len(username) > 15:
                         conn.send(createMessage("s", "Invalid username."))
+                        removeConn(conn)
+                    elif username in usernames:
+                        conn.send(createMessage("s", f"Usernames in use: {", ".join(usernames)}."))
                         removeConn(conn)
                     else:
                         connections[conn]["username"] = username
@@ -151,6 +180,9 @@ if interactive:
                 for otherConn in connections.keys():
                     if otherConn != sock:
                         otherConn.send(createMessage("s", msg))
+            case "log":
+                for message in messageLog:
+                    print(message)
             case _:
                 print("Command not found") 
         
