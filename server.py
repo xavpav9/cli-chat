@@ -52,8 +52,14 @@ def removeConn(conn):
         conn.close()
     except:
         pass
+    username = connections[conn]["username"]
     connections.pop(conn)
+    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> left"
+    logMsg(logMessage)
     log(f"Terminated connection: {conn}")
+    for otherConn in connections.keys():
+        if otherConn != sock:
+            otherConn.send(createMessage("s", f"{username} has left."))
 
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
@@ -110,20 +116,8 @@ def main():
                     removeConn(conn)
                 elif "username" in connections[conn].keys():
                     log(f"{data} from {connections[conn]["address"]}")
-                    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]["username"]} |=> Message {data}"
-                    messageLog.append(logMessage)
-                    with open("log.txt", "r") as file:
-                        lines = file.readlines()
-                        file.close()
-
-                    for i in range(len(lines)):
-                        lines[i] = lines[i].strip("\n")
-
-                    lines.append(logMessage)
-
-                    with open("log.txt", "w") as file:
-                        file.write("\n".join(lines))
-                        file.close()
+                    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]["username"]} |=> Message: {data}"
+                    logMsg(logMessage)
 
                     for otherConn in connections.keys():
                         if otherConn != sock and otherConn != conn:
@@ -145,10 +139,31 @@ def main():
                         removeConn(conn)
                     else:
                         connections[conn]["username"] = username
+                        logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined"
+                        logMsg(logMessage)
+                        for otherConn in connections.keys():
+                            if otherConn != sock:
+                                otherConn.send(createMessage("s", f"{username} has joined."))
 
 def log(msg):
     if not interactive:
         print(msg)
+
+def logMsg(msg):
+    messageLog.append(msg)
+    with open("log.txt", "r") as file:
+        lines = file.readlines()
+        file.close()
+
+        for i in range(len(lines)):
+            lines[i] = lines[i].strip("\n")
+
+        lines.append(msg)
+
+    with open("log.txt", "w") as file:
+        file.write("\n".join(lines) + "\n")
+        file.close()
+
 
 if interactive:
     mainThread = Thread(target=main)
@@ -158,7 +173,7 @@ if interactive:
         command = input("> ")
         match command:
             case "h" | "help":
-                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\n")
+                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
