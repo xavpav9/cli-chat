@@ -69,7 +69,14 @@ while True:
             if msg == b"":
                 removeConn(conn)
             else:
-                print(f"{msg.decode(encoding="UTF-8")} from {connections[conn]["address"]}")
-                for otherConn in connections.keys():
-                    if otherConn != sock and otherConn != conn:
-                        otherConn.send(msg)
+                if "username" in connections[conn].keys():
+                    print(f"{msg.decode(encoding="UTF-8")} from {connections[conn]["address"]}")
+                    for otherConn in connections.keys():
+                        if otherConn != sock and otherConn != conn:
+                            otherConn.send(connections[conn]["username"].encode(encoding="UTF-8") + msg)
+                else:
+                    username = msg.decode(encoding="UTF-8")
+                    if len(username) < 2 or len(username) > 15:
+                        conn.send(b"Invalid username.")
+                    else:
+                        connections[conn]["username"] = msg.decode(encoding="UTF-8")
