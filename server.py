@@ -46,20 +46,23 @@ try:
 except:
     pass
 
-def removeConn(conn):
-    try:
-        conn.shutdown(2)
-        conn.close()
-    except:
-        pass
-    username = connections[conn]["username"]
-    connections.pop(conn)
-    logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> left"
-    logMsg(logMessage)
-    log(f"Terminated connection: {conn}")
-    for otherConn in connections.keys():
-        if otherConn != sock:
-            otherConn.send(createMessage("s", f"{username} has left."))
+def removeConn(conn, logInfo="left", globalMsg="has left"):
+    if conn in connections.keys():
+        username = connections[conn]["username"]
+        logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> {logInfo}"
+        logMsg(logMessage)
+        log(f"Terminated connection: {conn}")
+
+        try:
+            conn.shutdown(2)
+            conn.close()
+        except:
+            pass
+        connections.pop(conn)
+
+        for otherConn in connections.keys():
+            if otherConn != sock:
+                otherConn.send(createMessage("s", f"{username} {globalMsg}."))
 
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
@@ -173,7 +176,7 @@ if interactive:
         command = input("> ")
         match command:
             case "h" | "help":
-                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log")
+                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -198,6 +201,19 @@ if interactive:
             case "log":
                 for message in messageLog:
                     print(message)
+            case "kick":
+                user = input("Enter a user to kick: ")
+                removed = False
+                for conn in list(connections.keys())[1:]:
+                    if "username" in connections[conn].keys():
+                        if connections[conn]["username"] == user:
+                            conn.send(createMessage("s", "You have been kicked by the server."))
+                            print(f"\"{connections[conn]['username']}\" has been removed.")
+                            removeConn(conn, "kicked by server", "has been kicked")
+                            removed = True
+                            break
+                if not removed:
+                    print("User not found.")
             case _:
                 print("Command not found") 
         
