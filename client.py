@@ -30,5 +30,15 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 sock.connect((ip, port))
 
-print(sock.recv(1024).decode(encoding="UTF-8"))
+while True:
+    msg = input().encode(encoding="UTF-8")
+    if msg != b"":
+        print("Your message:",msg)
+        sock.send(msg)
+    receivedMsg = sock.recv(1024)
+    if receivedMsg != b"":
+        print(receivedMsg.decode(encoding="UTF-8"))
+    else:
+        print("Connection has been terminated")
+        break
 sock.close()
