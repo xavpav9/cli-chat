@@ -31,22 +31,22 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 sock.bind((ip, port))
 
-connections = [sock]
+connections = {sock: {}}
 sock.listen(5)
 
 def removeConn(conn):
     conn.shutdown(2)
     conn.close()
-    connections.remove(conn)
+    connections.pop(conn)
     print(f"Terminated connection: {conn}")
 
 
 while True:
     try:
-        connsToRead, connsToWrite, connsInError = select.select(connections, [], connections)
+        connsToRead, connsToWrite, connsInError = select.select(connections.keys(), [], connections.keys())
     except Exception as error:
         connError = False
-        for conn in connections:
+        for conn in connections.keys():
             if conn.fileno() == -1:
                 removeConn(conn)
                 connError = True
@@ -54,7 +54,6 @@ while True:
         if connError:
             continue
         else:
-            print(error)
             sys.exit()
 
     for conn in connsInError:
@@ -64,13 +63,13 @@ while True:
         if conn == sock:
             conn, addr = sock.accept()
             print(f"New connection: {addr}")
-            connections.append(conn)
+            connections[conn] = {"address": addr}
         else:
             msg = conn.recv(1024)
             if msg == b"":
                 removeConn(conn)
             else:
-                print(f"{msg.decode(encoding("UTF-8"))} from {conn}")
-                for otherConn in connections:
+                print(f"{msg.decode(encoding="UTF-8")} from {connections[conn]["address"]}")
+                for otherConn in connections.keys():
                     if otherConn != sock and otherConn != conn:
                         otherConn.send(msg)
