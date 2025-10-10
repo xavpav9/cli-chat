@@ -126,7 +126,7 @@ if interactive:
             case "h":
                 print("lc = list connections\nla = list connections by username and address")
             case "lc":
-                print(f"socket: {list(connections.keys())[0]}")
+                print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
                     for conn in list(connections.keys())[1:]:
                         print(conn)
