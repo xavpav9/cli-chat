@@ -41,8 +41,11 @@ connections = {sock: {}}
 sock.listen(5)
 
 def removeConn(conn):
-    conn.shutdown(2)
-    conn.close()
+    try:
+        conn.shutdown(2)
+        conn.close()
+    except:
+        pass
     connections.pop(conn)
     log(f"Terminated connection: {conn}")
 
@@ -53,19 +56,22 @@ def createMessage(username, data):
     return f"{createPacket(username)}{createPacket(data)}".encode(encoding="UTF-8")
 
 def decodeMessage(conn):
-    header = conn.recv(HEADERSIZE)
-    if header == b"":
-        return None
-    length = int(header.strip())
-    text = b""
-    for i in range(length // 8):
-        part = conn.recv(8)
+    try:
+        header = conn.recv(HEADERSIZE)
+        if header == b"":
+            return None
+        length = int(header.strip())
+        text = b""
+        for i in range(length // 8):
+            part = conn.recv(8)
+            text += part
+
+        part = conn.recv(length % 8)
         text += part
 
-    part = conn.recv(length % 8)
-    text += part
-
-    return text.decode(encoding="UTF-8")
+        return text.decode(encoding="UTF-8")
+    except:
+        return None
 
 
 def main():

@@ -64,8 +64,9 @@ def outputMessages():
             messages.append(f"{username}>: {data}")
             refreshDisplay(readline.get_line_buffer())
         else:
-            print("Connection has been terminated")
+            print("Connection has been terminated. Enter <C-c> to exit.")
             connected = False
+            sock.send(b"")
 
 def refreshDisplay(currentLine):
     os.system("clear") 
@@ -87,12 +88,16 @@ outputThread.start()
 
 while connected:
     msg = input()
-    if msg != "":
+    if msg == "!quit":
+        print("Connection has been terminated. Enter <C-c> to exit.")
+        connected = False
+        sock.send(b"")
+    elif msg != "":
         messages.append(f"{username}>: {msg}")
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
     else:
         refreshDisplay("")
 
-outputThread.join()
 sock.close()
+outputThread.join()
