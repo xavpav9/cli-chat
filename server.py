@@ -125,6 +125,8 @@ def main():
 
                     if data == "!users":
                         conn.send(createMessage("s", f"The current users online are: {"\n-    " + "\n-    ".join(getUsernames())}"))
+                    elif data == "!quit":
+                        removeConn(conn)
                     else:
                         for otherConn in connections.keys():
                             if otherConn != sock and otherConn != conn:

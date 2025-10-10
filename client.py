@@ -64,7 +64,7 @@ def outputMessages():
             messages.append(f"{username}>: {data}")
             refreshDisplay(readline.get_line_buffer())
         else:
-            print("Connection has been terminated. Enter <C-c> to exit.")
+            print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
             sock.send(b"")
 
@@ -87,12 +87,12 @@ outputThread = Thread(target=outputMessages)
 outputThread.start()
 
 while connected:
-    msg = input()
-    if msg == "!quit":
-        print("Connection has been terminated. Enter <C-c> to exit.")
-        connected = False
-        sock.send(b"")
-    elif msg == "!users":
+    try:
+        msg = input()
+    except KeyboardInterrupt:
+        msg = "!quit"
+        
+    if msg == "!quit" or msg == "!users":
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
     elif msg != "":
@@ -102,5 +102,6 @@ while connected:
     else:
         refreshDisplay("")
 
+print("\n")
 sock.close()
 outputThread.join()
