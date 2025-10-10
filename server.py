@@ -103,6 +103,7 @@ def main():
             if connError:
                 continue
             else:
+                print(error)
                 sys.exit()
 
         for conn in connsInError:
@@ -122,17 +123,17 @@ def main():
                     logMessage = f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]['username']} |=> Message: {data}"
                     logMsg(logMessage)
 
-                    for otherConn in connections.keys():
-                        if otherConn != sock and otherConn != conn:
-                            otherConn.send(createMessage(connections[conn]["username"], data))
+                    if data == "!users":
+                        conn.send(createMessage("s", f"The current users online are: {"\n-    " + "\n-    ".join(getUsernames())}"))
+                    else:
+                        for otherConn in connections.keys():
+                            if otherConn != sock and otherConn != conn:
+                                otherConn.send(createMessage(connections[conn]["username"], data))
                 else:
                     username = data
                     log(f"Username: {username} for {connections[conn]['address']}")
 
-                    usernames = []
-                    for c in list(connections.keys())[1:]:
-                        if "username" in connections[c].keys():
-                            usernames.append(connections[c]["username"])
+                    usernames = getUsernames()
 
                     if len(username) < 2 or len(username) > 15:
                         conn.send(createMessage("s", "Invalid username."))
@@ -144,6 +145,7 @@ def main():
                         connections[conn]["username"] = username
                         logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined"
                         logMsg(logMessage)
+                        conn.send(createMessage("s", "Enter !quit to leave or !users to see a list of users currently online.\n"))
                         for otherConn in connections.keys():
                             if otherConn != sock:
                                 otherConn.send(createMessage("s", f"{username} has joined."))
@@ -166,6 +168,16 @@ def logMsg(msg):
     with open("log.txt", "w") as file:
         file.write("\n".join(lines) + "\n")
         file.close()
+
+def getUsernames():
+    usernames = []
+    if len(connections) > 1:
+        for conn in connections:
+            if "username" in list(connections[conn].keys())[1:]:
+                usernames.append(connections[conn]["username"])
+        return usernames
+    else:
+        return []
 
 
 if interactive:

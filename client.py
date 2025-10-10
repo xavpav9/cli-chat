@@ -92,6 +92,9 @@ while connected:
         print("Connection has been terminated. Enter <C-c> to exit.")
         connected = False
         sock.send(b"")
+    elif msg == "!users":
+        refreshDisplay("")
+        sock.send(createPacket(msg).encode(encoding="UTF-8"))
     elif msg != "":
         messages.append(f"{username}>: {msg}")
         refreshDisplay("")
