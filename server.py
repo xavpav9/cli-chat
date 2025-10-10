@@ -1,4 +1,4 @@
-import socket, sys, re
+import socket, sys, re, select
 
 #Usage - python(3) server.py ip port
 
@@ -31,11 +31,46 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 sock.bind((ip, port))
 
+connections = [sock]
 sock.listen(5)
 
-while True:
-    conn, addr = sock.accept()
-    print(addr)
-    conn.send(b"Hello")
+def removeConn(conn):
     conn.shutdown(2)
     conn.close()
+    connections.remove(conn)
+    print(f"Terminated connection: {conn}")
+
+
+while True:
+    try:
+        connsToRead, connsToWrite, connsInError = select.select(connections, [], connections)
+    except Exception as error:
+        connError = False
+        for conn in connections:
+            if conn.fileno() == -1:
+                removeConn(conn)
+                connError = True
+
+        if connError:
+            continue
+        else:
+            print(error)
+            sys.exit()
+
+    for conn in connsInError:
+        removeConn(conn)
+
+    for conn in connsToRead:
+        if conn == sock:
+            conn, addr = sock.accept()
+            print(f"New connection: {addr}")
+            connections.append(conn)
+        else:
+            msg = conn.recv(1024)
+            if msg == b"":
+                removeConn(conn)
+            else:
+                print(f"{msg.decode(encoding("UTF-8"))} from {conn}")
+                for otherConn in connections:
+                    if otherConn != sock and otherConn != conn:
+                        otherConn.send(msg)
