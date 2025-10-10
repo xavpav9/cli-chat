@@ -71,7 +71,7 @@ def refreshDisplay(currentLine):
     os.system("clear") 
     for msg in messages:
         print(msg)
-    print(f"\nyou> " + currentLine, end="", flush=True)
+    print("\nyou> " + currentLine, end="", flush=True)
 
 
 sock.connect((ip, port))
@@ -79,11 +79,11 @@ connected = True
 
 sock.send(createPacket(username).encode(encoding="UTF-8"))
 
+os.system("clear")
+print("\nyou> ", end="", flush=True)
+
 outputThread = Thread(target=outputMessages)
 outputThread.start()
-
-os.system("clear")
-print("you> ", end="", flush=True)
 
 while connected:
     msg = input()
@@ -91,6 +91,8 @@ while connected:
         messages.append(f"{username}>: {msg}")
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
+    else:
+        refreshDisplay("")
 
 outputThread.join()
 sock.close()

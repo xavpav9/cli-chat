@@ -99,8 +99,6 @@ def main():
                 elif "username" in connections[conn].keys():
                     log(f"{data} from {connections[conn]["address"]}")
 
-                    packet = createMessage(connections[conn]["username"], data)
-
                     for otherConn in connections.keys():
                         if otherConn != sock and otherConn != conn:
                             otherConn.send(createMessage(connections[conn]["username"], data))
@@ -108,7 +106,8 @@ def main():
                     username = data
                     log(f"Username: {username} for {connections[conn]["address"]}")
                     if len(username) < 2 or len(username) > 15:
-                        conn.send(b"Invalid username.")
+                        conn.send(createMessage("s", "Invalid username."))
+                        removeConn(conn)
                     else:
                         connections[conn]["username"] = username
 
@@ -124,7 +123,7 @@ if interactive:
         command = input("> ")
         match command:
             case "h":
-                print("lc = list connections\nla = list connections by username and address")
+                print("lc = list connections\nla = list connections by username and address\nstalk = send out a message as the server")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -133,9 +132,19 @@ if interactive:
             case "la":
                 if len(connections) > 1:
                     for conn in list(connections.keys())[1:]:
-                        print(f"Username: \"{connections[conn]["username"]}\", Address: {connections[conn]["address"]}")
+                        if "username" in connections[conn].keys():
+                            username = connections[conn]["username"]
+                        else:
+                            username = None
+                        print(f"Username: \"{username}\", Address: {connections[conn]["address"]}")
                 else:
                     print(None)
+            case "stalk":
+                msg = input("Enter message: ")
+
+                for otherConn in connections.keys():
+                    if otherConn != sock:
+                        otherConn.send(createMessage("s", msg))
             case _:
                 print("Command not found") 
         
