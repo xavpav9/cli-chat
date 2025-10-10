@@ -145,7 +145,7 @@ def main():
 
                     usernames = getUsernames()
 
-                    if len(username) < 2 or len(username) > 15:
+                    if len(username) < 2 or len(username) > 15 or " " in username:
                         conn.send(createMessage("s", "Invalid username."))
                         removeConn(conn)
                     elif username in usernames:

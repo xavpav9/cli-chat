@@ -33,8 +33,8 @@ else:
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 username = input("Enter your username: ")
-while len(username) < 2 or len(username) > 15:
-    print("Your username must be between 2 and 15 characters long.")
+while len(username) < 2 or len(username) > 15 or " " in username:
+    print("Your username must be between 2 and 15 characters long with no spaces.")
     username = input("Enter your username: ")
 
 def createPacket(text):
