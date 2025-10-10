@@ -132,7 +132,7 @@ def main():
                     logMsg(logMessage)
 
                     if data == "!users":
-                        conn.send(createMessage("s", f"The current users online are: {"\n-    " + "\n-    ".join(getUsernames())}"))
+                        conn.send(createMessage("i", f"The current users online are: {"\n-    " + "\n-    ".join(getUsernames())}"))
                     elif data == "!quit":
                         removeConn(conn)
                     else:
@@ -146,16 +146,16 @@ def main():
                     usernames = getUsernames()
 
                     if len(username) < 2 or len(username) > 15 or " " in username:
-                        conn.send(createMessage("s", "Invalid username."))
+                        conn.send(createMessage("i", "Invalid username."))
                         removeConn(conn)
                     elif username in usernames:
-                        conn.send(createMessage("s", f"Usernames in use: {', '.join(usernames)}."))
+                        conn.send(createMessage("i", f"Usernames in use: {', '.join(usernames)}."))
                         removeConn(conn)
                     else:
                         connections[conn]["username"] = username
                         logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined"
                         logMsg(logMessage)
-                        conn.send(createMessage("s", "Enter !quit to leave or !users to see a list of users currently online.\n"))
+                        conn.send(createMessage("i", "Enter !quit to leave or !users to see a list of users currently online.\n"))
                         for otherConn in connections.keys():
                             if otherConn != sock:
                                 otherConn.send(createMessage("s", f"{username} has joined."))
@@ -220,6 +220,8 @@ if interactive:
                     print(None)
             case "stalk":
                 msg = input("Enter message: ")
+                logMessage = f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}"
+                logMsg(logMessage)
 
                 for otherConn in connections.keys():
                     if otherConn != sock:
