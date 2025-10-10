@@ -91,8 +91,10 @@ while connected:
         msg = input()
     except KeyboardInterrupt:
         msg = "!quit"
-        
-    if msg == "!quit" or msg == "!users":
+
+    if not connected:
+        break
+    elif msg == "!quit" or msg == "!users":
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
     elif msg != "":
@@ -102,6 +104,6 @@ while connected:
     else:
         refreshDisplay("")
 
-print("\n")
+print("")
 sock.close()
 outputThread.join()
