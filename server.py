@@ -36,6 +36,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 sock.bind((ip, port))
+connected = True
 
 connections = {sock: {}}
 sock.listen(5)
@@ -48,10 +49,12 @@ except:
 
 def removeConn(conn, logInfo="left", globalMsg="has left"):
     if conn in connections.keys():
-        username = connections[conn]["username"]
-        logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> {logInfo}"
-        logMsg(logMessage)
-        log(f"Terminated connection: {conn}")
+        username = ""
+        if "username" in connections[conn].keys():
+            username = connections[conn]["username"]
+            logMessage = f"Time: {datetime.datetime.now()} |=> Username: {username} |=> {logInfo}"
+            logMsg(logMessage)
+            log(f"Terminated connection: {conn}")
 
         try:
             conn.shutdown(2)
@@ -60,9 +63,10 @@ def removeConn(conn, logInfo="left", globalMsg="has left"):
             pass
         connections.pop(conn)
 
-        for otherConn in connections.keys():
-            if otherConn != sock:
-                otherConn.send(createMessage("s", f"{username} {globalMsg}."))
+        if username != "":
+            for otherConn in connections.keys():
+                if otherConn != sock:
+                    otherConn.send(createMessage("s", f"{username} {globalMsg}."))
 
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
@@ -90,9 +94,13 @@ def decodeMessage(conn):
 
 
 def main():
-    while True:
+    global connected
+    while connected:
         try:
             connsToRead, connsToWrite, connsInError = select.select(connections.keys(), [], connections.keys())
+        except KeyboardInterrupt:
+            connected = False
+            continue
         except Exception as error:
             connError = False
             for conn in connections.keys():
@@ -186,11 +194,15 @@ if interactive:
     mainThread = Thread(target=main)
     mainThread.start()
     print("Enter h for help")
-    while True:
-        command = input("> ")
+    while connected:
+        try:
+            command = input("> ")
+        except KeyboardInterrupt:
+            command = "quit"
+
         match command:
             case "h" | "help":
-                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
+                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player\nquit/exit = close server")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -228,10 +240,20 @@ if interactive:
                             break
                 if not removed:
                     print("User not found.")
+            case "quit" | "exit":
+                if len(connections) > 1:
+                    for conn in list(connections.keys())[1:]:
+                        removeConn(conn)
+                connected = False
+                print("Connections have been terminated. You might need to press <C-c> to exit.")
             case _:
                 print("Command not found") 
         
-
-    mainThread.join()
+    try:
+        mainThread.join()
+    except KeyboardInterrupt:
+        pass
 else:
     main()
+
+print()
