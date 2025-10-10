@@ -1,6 +1,8 @@
 import socket, sys, re, select
-
+    
 #Usage - python(3) server.py ip port
+
+HEADERSIZE = 5
 
 if len(sys.argv) != 3:
     print("Must provide IP address and port number.")
@@ -40,6 +42,27 @@ def removeConn(conn):
     connections.pop(conn)
     print(f"Terminated connection: {conn}")
 
+def createPacket(text):
+    return f"{len(text):<{HEADERSIZE}}{text}"
+
+def createMessage(username, data):
+    return f"{createPacket(username)}{createPacket(data)}".encode(encoding="UTF-8")
+
+def decodeMessage(conn):
+    header = conn.recv(HEADERSIZE)
+    if header == b"":
+        return None
+    length = int(header.strip())
+    text = b""
+    for i in range(length // 8):
+        part = conn.recv(8)
+        text += part
+
+    part = conn.recv(length % 8)
+    text += part
+
+    return text.decode(encoding="UTF-8")
+
 
 while True:
     try:
@@ -65,18 +88,21 @@ while True:
             print(f"New connection: {addr}")
             connections[conn] = {"address": addr}
         else:
-            msg = conn.recv(1024)
-            if msg == b"":
+            data = decodeMessage(conn)
+            if data == None:
                 removeConn(conn)
+            elif "username" in connections[conn].keys():
+                print(f"{data} from {connections[conn]["address"]}")
+
+                packet = createMessage(connections[conn]["username"], data)
+
+                for otherConn in connections.keys():
+                    if otherConn != sock and otherConn != conn:
+                        otherConn.send(createMessage(connections[conn]["username"], data))
             else:
-                if "username" in connections[conn].keys():
-                    print(f"{msg.decode(encoding="UTF-8")} from {connections[conn]["address"]}")
-                    for otherConn in connections.keys():
-                        if otherConn != sock and otherConn != conn:
-                            otherConn.send(connections[conn]["username"].encode(encoding="UTF-8") + msg)
+                username = data
+                print(f"Username: {username} for {connections[conn]["address"]}")
+                if len(username) < 2 or len(username) > 15:
+                    conn.send(b"Invalid username.")
                 else:
-                    username = msg.decode(encoding="UTF-8")
-                    if len(username) < 2 or len(username) > 15:
-                        conn.send(b"Invalid username.")
-                    else:
-                        connections[conn]["username"] = msg.decode(encoding="UTF-8")
+                    connections[conn]["username"] = username

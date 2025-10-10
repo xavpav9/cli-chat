@@ -2,6 +2,8 @@ import socket, sys, re
 
 #Usage - python(3) server.py ip port
 
+HEADERSIZE = 5
+
 if len(sys.argv) != 3:
     print("Must provide IP address and port number.")
     sys.exit()
@@ -30,20 +32,40 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 username = input("Enter your username: ")
 while len(username) < 2 or len(username) > 15:
-    print("Invalid username. Must be between 2 and 15 characters.")
     username = input("Enter your username: ")
 
+def createPacket(text):
+    return f"{len(text):<{HEADERSIZE}}{text}"
+
+def decodeMessage(conn):
+    header = conn.recv(HEADERSIZE)
+    if header == b"":
+        return None
+    length = int(header.strip())
+    text = b""
+    for i in range(length // 8):
+        part = conn.recv(8)
+        text += part
+
+    part = conn.recv(length % 8)
+    text += part
+
+    return text.decode(encoding="UTF-8")
+
 sock.connect((ip, port))
-sock.send(username.encode(encoding="UTF-8"))
+
+sock.send(createPacket(username).encode(encoding="UTF-8"))
 
 while True:
-    msg = input().encode(encoding="UTF-8")
-    if msg != b"":
-        print("Your message:",msg)
-        sock.send(msg)
-    receivedMsg = sock.recv(1024)
-    if receivedMsg != b"":
-        print(receivedMsg.decode(encoding="UTF-8"))
+    msg = input()
+    if msg != "":
+        print(f"{username}>: {msg}")
+        sock.send(createPacket(msg).encode(encoding="UTF-8"))
+
+    username = decodeMessage(sock)
+    if username != None:
+        data = decodeMessage(sock)
+        print(f"{username}>: {data}")
     else:
         print("Connection has been terminated")
         break
