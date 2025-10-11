@@ -43,17 +43,20 @@ connections = {sock: {}}
 sock.listen(5)
 
 messageLog = []
-try:
-    open("log.txt", "x")
-except:
-    pass
+
+for i in range(3):
+    try:
+        open(f"log{i + 1}.txt", "x")
+    except:
+        continue
 
 def removeConn(conn, logInfo="left", globalMsg="has left"):
     if conn in connections.keys():
         username = ""
         if "username" in connections[conn].keys():
             username = connections[conn]["username"]
-            logMsg(f"Time: {datetime.datetime.now()} |=> Username: {username} |=> {logInfo}")
+            chatServer = connections[conn]["chat-server"]
+            logMsg(f"Time: {datetime.datetime.now()} |=> Username: {username} |=> {logInfo}", chatServer)
             log(f"Terminated connection: {conn}")
 
         try:
@@ -65,7 +68,7 @@ def removeConn(conn, logInfo="left", globalMsg="has left"):
 
         if username != "":
             for otherConn in connections.keys():
-                if otherConn != sock:
+                if otherConn != sock and connections[otherConn]['chat-server'] == chatServer:
                     otherConn.send(createMessage("s", f"{username} {globalMsg}."))
 
 def createPacket(text):
@@ -121,28 +124,46 @@ def main():
             if conn == sock:
                 conn, addr = sock.accept()
                 log(f"New connection: {addr}")
-                connections[conn] = {"address": addr}
+                connections[conn] = {"address": addr, "chat-server": 1}
             else:
                 data = decodeMessage(conn)
                 if data == None:
                     removeConn(conn)
                 elif "username" in connections[conn].keys():
                     log(f"{data} from {connections[conn]['address']}")
-                    logMsg(f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]['username']} |=> Message: {data}")
+                    logMsg(f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]['username']} |=> Message: {data}", connections[conn]['chat-server'])
 
-                    if data == "!users":
-                        conn.send(createMessage("i", "The current users online are: \n-    " + "\n-    ".join(getUsernames())))
-                    elif data == "!quit":
-                        removeConn(conn)
+                    if data[0] == "!" and len(data) > 1:
+                        if data.rstrip(" ") == "!users":
+                            conn.send(createMessage("i", "The current users online are: \n-    " + "\n-    ".join(getUsernames(True))))
+                        elif data.rstrip(" ") == "!quit":
+                            removeConn(conn)
+                        elif data.rstrip(" ") == "!chat":
+                            conn.send(createMessage("i", f"You are in chat server {connections[conn]['chat-server']}."))
+                        elif data[1] in ["1", "2", "3"]:
+                            oldChatServer = connections[conn]['chat-server']
+                            for otherConn in connections:
+                                if otherConn != sock and connections[otherConn]['chat-server'] == int(data[1]):
+                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has joined from chat server {oldChatServer}."))
+
+                            connections[conn]['chat-server'] = int(data[1])
+                            conn.send(createMessage("i", f"You are now in chat server {connections[conn]['chat-server']}."))
+
+                            for otherConn in connections:
+                                if otherConn != sock and connections[otherConn]['chat-server'] == oldChatServer:
+                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has moved to chat server {data[1]}"))
+                        else:
+                            conn.send(createMessage("i", "Unknown command"))
+                            
                     else:
                         for otherConn in connections.keys():
-                            if otherConn != sock and otherConn != conn:
+                            if otherConn != sock and otherConn != conn and connections[otherConn]['chat-server'] == connections[conn]['chat-server']:
                                 otherConn.send(createMessage(connections[conn]["username"], data))
                 else:
                     username = data
                     log(f"Username: {username} for {connections[conn]['address']}")
 
-                    usernames = getUsernames()
+                    usernames = getUsernames(False)
 
                     if len(username) < 2 or len(username) > 15 or " " in username:
                         conn.send(createMessage("i", "Invalid username."))
@@ -152,19 +173,19 @@ def main():
                         removeConn(conn)
                     else:
                         connections[conn]["username"] = username
-                        logMsg(f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined")
-                        conn.send(createMessage("i", "Enter !quit to leave or !users to see a list of users currently online.\n"))
+                        logMsg(f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined", 1)
+                        conn.send(createMessage("i", "Enter !quit to leave or !users to see a list of users currently online or !chat to see the chat server you are in.\n"))
                         for otherConn in connections.keys():
-                            if otherConn != sock:
+                            if otherConn != sock and connections[otherConn]['chat-server'] == 1:
                                 otherConn.send(createMessage("s", f"{username} has joined."))
 
 def log(msg):
     if not interactive:
         print(msg)
 
-def logMsg(msg):
+def logMsg(msg, server):
     messageLog.append(msg)
-    with open("log.txt", "r") as file:
+    with open(f"log{server}.txt", "r") as file:
         lines = file.readlines()
         file.close()
 
@@ -173,17 +194,20 @@ def logMsg(msg):
 
         lines.append(msg)
 
-    with open("log.txt", "w") as file:
+    with open(f"log{server}.txt", "w") as file:
         file.write("\n".join(lines) + "\n")
         file.close()
 
-def getUsernames():
+def getUsernames(byChatServer=False):
     usernames = []
     if len(connections) > 1:
         for conn in connections:
             if "username" in list(connections[conn].keys())[1:]:
-                usernames.append(connections[conn]["username"])
-        return usernames
+                if byChatServer:
+                    usernames.append(f"{connections[conn]['chat-server']}. {connections[conn]['username']}")
+                else:
+                    usernames.append(connections[conn]["username"])
+        return sorted(usernames)
     else:
         return []
 

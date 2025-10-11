@@ -93,7 +93,7 @@ while connected:
 
     if not connected:
         break
-    elif msg == "!quit" or msg == "!users":
+    elif len(msg) > 1 and msg[0] == "!":
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
     elif msg != "":
