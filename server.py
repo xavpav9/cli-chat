@@ -37,6 +37,7 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 sock.bind((ip, port))
 connected = True
+print(f"...accepting connections on {ip}:{port}")
 
 connections = {sock: {}}
 sock.listen(5)
@@ -199,7 +200,7 @@ if interactive:
 
         match command:
             case "h" | "help":
-                print("h/help = this menu\nlc = list connections\nla = list connections by username and address\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player\nquit/exit = close server")
+                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username and address\nip = print ip\nport = print port\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -244,8 +245,13 @@ if interactive:
                         removeConn(conn)
                 connected = False
                 print("Connections have been terminated. You might need to press <C-c> to exit.")
+            case "ip":
+                print(ip)
+            case "port":
+                print(port)
             case _:
                 print("Command not found") 
+        print()
         
     try:
         mainThread.join()
