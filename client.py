@@ -93,11 +93,11 @@ while connected:
     try:
         msg = input()
     except KeyboardInterrupt:
-        msg = "!quit"
+        msg = "/quit"
 
     if not connected:
         break
-    elif len(msg) > 1 and msg[0] == "!":
+    elif len(msg) > 1 and msg[0] == "/":
         refreshDisplay("")
         sock.send(createPacket(msg).encode(encoding="UTF-8"))
     elif msg != "":
