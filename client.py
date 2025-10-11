@@ -100,6 +100,9 @@ while connected:
     elif len(message) > 1 and message[0] == "/":
         refreshDisplay("")
         sock.send(createPacket(message).encode(encoding="UTF-8"))
+    elif len(message) > 1023:
+        messages.append(f"i>: Message above char limit of 1023.")
+        refreshDisplay("")
     elif message != "":
         messages.append(f"{username}>: {message}")
         refreshDisplay("")

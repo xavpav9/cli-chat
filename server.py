@@ -106,6 +106,46 @@ def decodeMessage(conn):
     except:
         return None
 
+def log(message):
+    if not interactive:
+        print(message)
+
+def logMessage(time, username, message, room):
+    if room != "a":
+        data = [time, username, message]
+        messageLog[room - 1].append(data)
+        with open(f"log{room}.txt", "r") as file:
+            lines = file.readlines()
+            file.close()
+
+            for i in range(len(lines)):
+                lines[i] = lines[i].strip("\n")
+
+            lines.append(f"Time: {data[0]} |=> Username: {data[1]} |=> Message: {data[2]}")
+
+        with open(f"log{room}.txt", "w") as file:
+            file.write("\n".join(lines) + "\n")
+            file.close()
+    else:
+        for room in range(numOfRooms):
+            logMessage(time, username, message, room + 1)
+
+def getUsernames(byChatServer=False):
+    usernames = []
+    if len(connections) > 1:
+        for conn in connections:
+            if "username" in list(connections[conn].keys())[1:]:
+                if byChatServer:
+                    usernames.append(f"{connections[conn]['room']}. {connections[conn]['username']}")
+                else:
+                    usernames.append(connections[conn]["username"])
+        return sorted(usernames)
+    else:
+        return []
+
+def clearScreen(conn):
+    conn.send(createMessage("i", "clear"))
+    conn.send(createMessage("i", "Enter /help for help.\n"))
 
 def main():
     global connected
@@ -149,7 +189,7 @@ def main():
                         elif message.rstrip(" ") == "/quit":
                             removeConn(conn)
                         elif message.rstrip(" ") == "/help":
-                            message = "Commands begin with a /. Commands available:\n-    /quit to leave.\n-    /users to see a list of users currently online.\n-    /room to see the room you are in.\n-    /history to view all the messages stored in the current log\n-    /clear to clear the current screen"
+                            message = "Commands begin with a /. Commands available:\n-    /quit to leave.\n-    /users to see a list of users currently online.\n-    /room to see the room you are in.\n-    /history to view all the messages stored in the current log\n-    /clear to clear the current screen\n"
                             if numOfRooms != 1:
                                 message += "-    /[1-"+str(numOfRooms)+"] to go to that numbered room.\n"
                             conn.send(createMessage("i", message))
@@ -189,10 +229,13 @@ def main():
                             conn.send(createMessage("i", "Unknown command"))
                             
                     else:
-                        logMessage(datetime.datetime.now(), connections[conn]['username'], message, connections[conn]['room'])
-                        for otherConn in connections.keys():
-                            if otherConn != sock and otherConn != conn and connections[otherConn]['room'] == connections[conn]['room']:
-                                otherConn.send(createMessage(connections[conn]["username"], message))
+                        if len(message) > 1023:
+                            conn.send(createMessage("i", "Message above char limit of 1023."))
+                        else:
+                            logMessage(datetime.datetime.now(), connections[conn]['username'], message, connections[conn]['room'])
+                            for otherConn in connections.keys():
+                                if otherConn != sock and otherConn != conn and connections[otherConn]['room'] == connections[conn]['room']:
+                                    otherConn.send(createMessage(connections[conn]["username"], message))
                 else:
                     username = message
                     log(f"Username: {username} for {connections[conn]['address']}")
@@ -214,48 +257,6 @@ def main():
                         for otherConn in connections.keys():
                             if otherConn != sock and connections[otherConn]['room'] == 1:
                                 otherConn.send(createMessage("s", message))
-
-def log(message):
-    if not interactive:
-        print(message)
-
-def logMessage(time, username, message, room):
-    if room != "a":
-        data = [time, username, message]
-        messageLog[room - 1].append(data)
-        with open(f"log{room}.txt", "r") as file:
-            lines = file.readlines()
-            file.close()
-
-            for i in range(len(lines)):
-                lines[i] = lines[i].strip("\n")
-
-            lines.append(f"Time: {data[0]} |=> Username: {data[1]} |=> Message: {data[2]}")
-
-        with open(f"log{room}.txt", "w") as file:
-            file.write("\n".join(lines) + "\n")
-            file.close()
-    else:
-        for room in range(numOfRooms):
-            logMessage(time, username, message, room + 1)
-
-def getUsernames(byChatServer=False):
-    usernames = []
-    if len(connections) > 1:
-        for conn in connections:
-            if "username" in list(connections[conn].keys())[1:]:
-                if byChatServer:
-                    usernames.append(f"{connections[conn]['room']}. {connections[conn]['username']}")
-                else:
-                    usernames.append(connections[conn]["username"])
-        return sorted(usernames)
-    else:
-        return []
-
-def clearScreen(conn):
-    conn.send(createMessage("i", "clear"))
-    conn.send(createMessage("i", "Enter /help for help.\n"))
-
 
 if interactive:
     mainThread = Thread(target=main)
