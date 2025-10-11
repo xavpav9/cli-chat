@@ -148,7 +148,10 @@ def main():
                         elif data.rstrip(" ") == "!quit":
                             removeConn(conn)
                         elif data.rstrip(" ") == "!help":
-                            conn.send(createMessage("i", f"Enter !quit to leave, !users to see a list of users currently online, !room to see the room you are in, ![1-{numOfRooms}] to go to a room."))
+                            msg = "Commands begin with a !. Commands available:\n-    !quit to leave.\n-    !users to see a list of users currently online.\n-    !room to see the room you are in.\n"
+                            if numOfRooms != 1:
+                                msg += "-    ![1-"+str(numOfRooms)+"] to go to that numbered room.\n"
+                            conn.send(createMessage("i", msg))
                         elif data.rstrip(" ") == "!room":
                             conn.send(createMessage("i", f"You are in room {connections[conn]['room']} out of {numOfRooms}."))
                         elif data[1] in [str(room + 1) for room in range(numOfRooms)]:
