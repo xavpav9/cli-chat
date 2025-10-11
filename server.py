@@ -207,20 +207,24 @@ def log(msg):
     if not interactive:
         print(msg)
 
-def logMsg(msg, server):
-    messageLog.append(msg)
-    with open(f"log{server}.txt", "r") as file:
-        lines = file.readlines()
-        file.close()
+def logMsg(msg, room):
+    if room != "a":
+        messageLog.append(f"{msg} |=> Room: {room}")
+        with open(f"log{room}.txt", "r") as file:
+            lines = file.readlines()
+            file.close()
 
-        for i in range(len(lines)):
-            lines[i] = lines[i].strip("\n")
+            for i in range(len(lines)):
+                lines[i] = lines[i].strip("\n")
 
-        lines.append(msg)
+            lines.append(msg)
 
-    with open(f"log{server}.txt", "w") as file:
-        file.write("\n".join(lines) + "\n")
-        file.close()
+        with open(f"log{room}.txt", "w") as file:
+            file.write("\n".join(lines) + "\n")
+            file.close()
+    else:
+        for room in range(numOfRooms):
+            logMsg(msg, room + 1)
 
 def getUsernames(byChatServer=False):
     usernames = []
@@ -265,17 +269,24 @@ if interactive:
                 else:
                     print(None)
             case "stalk":
-                newRoom = input("Enter a room: ")
-                if newRoom not in [str(room + 1) for room in range(numOfRooms)]:
+                newRoom = input("Enter a room (a=all): ")
+                if newRoom not in [str(room + 1) for room in range(numOfRooms)] and newRoom != "a":
                     print("Not a valid room.")
                 else:
-                    newRoom = int(newRoom)
                     msg = input("Enter message: ")
-                    logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", newRoom)
+                    if newRoom == "a":
+                        logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", "a")
 
-                    for otherConn in connections.keys():
-                        if otherConn != sock and connections[otherConn]['room'] == newRoom:
-                            otherConn.send(createMessage("s", msg))
+                        for otherConn in connections.keys():
+                            if otherConn != sock:
+                                otherConn.send(createMessage("s", msg))
+                    else:
+                        newRoom = int(newRoom)
+                        logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", newRoom)
+
+                        for otherConn in connections.keys():
+                            if otherConn != sock and connections[otherConn]['room'] == newRoom:
+                                otherConn.send(createMessage("s", msg))
             case "log":
                 for message in messageLog:
                     print(message)
