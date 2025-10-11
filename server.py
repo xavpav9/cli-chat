@@ -253,11 +253,11 @@ def main():
 
 for room in range(numOfRooms):
     messageLog.append([])
-    logMessage(datetime.datetime.now(), "s", "room created", room + 1)
     try:
         open(f"log{room + 1}.txt", "x")
     except:
-        continue
+        pass
+    logMessage(datetime.datetime.now(), "s", "room created", room + 1)
 
 if interactive:
     mainThread = Thread(target=main)
