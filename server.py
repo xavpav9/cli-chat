@@ -1,4 +1,4 @@
-import socket, sys, re, select, datetime
+import socket, sys, re, select, datetime, time
 from threading import Thread
     
 #Usage - python(3) server.py ip port numOfRooms
@@ -52,13 +52,6 @@ connections = {sock: {}}
 sock.listen(5)
 
 messageLog = []
-
-for i in range(numOfRooms):
-    messageLog.append([])
-    try:
-        open(f"log{i + 1}.txt", "x")
-    except:
-        continue
 
 def removeConn(conn, logInfo="has left"):
     if conn in connections.keys():
@@ -203,12 +196,12 @@ def main():
                             clearScreen(conn)
                         elif message[1:] in [str(room + 1) for room in range(numOfRooms)]:
                             newRoom = int(message[1:])
-                            if message[1] != str(connections[conn]['room']):
+                            if message[1:] != str(connections[conn]['room']):
                                 clearScreen(conn)
 
-                                oldChatServer = connections[conn]['room']
+                                oldChatRoom = connections[conn]['room']
 
-                                message = f"{connections[conn]['username']} has joined from room {oldChatServer}."
+                                message = f"{connections[conn]['username']} has joined from room {oldChatRoom}."
                                 logMessage(datetime.datetime.now(), "s", message, newRoom)
                                 for otherConn in connections:
                                     if otherConn != sock and connections[otherConn]['room'] == newRoom:
@@ -218,9 +211,9 @@ def main():
                                 conn.send(createMessage("i", f"You are now in room {connections[conn]['room']}."))
 
                                 message = f"{connections[conn]['username']} has moved to room {newRoom}."
-                                logMessage(datetime.datetime.now(), "s", message, oldChatServer)
+                                logMessage(datetime.datetime.now(), "s", message, oldChatRoom)
                                 for otherConn in connections:
-                                    if otherConn != sock and connections[otherConn]['room'] == oldChatServer:
+                                    if otherConn != sock and connections[otherConn]['room'] == oldChatRoom:
                                         otherConn.send(createMessage("s", message))
                             else:
                                 conn.send(createMessage("i", f"You are already in room {newRoom}."))
@@ -258,6 +251,14 @@ def main():
                             if otherConn != sock and connections[otherConn]['room'] == 1:
                                 otherConn.send(createMessage("s", message))
 
+for room in range(numOfRooms):
+    messageLog.append([])
+    logMessage(datetime.datetime.now(), "s", "room created", room + 1)
+    try:
+        open(f"log{room + 1}.txt", "x")
+    except:
+        continue
+
 if interactive:
     mainThread = Thread(target=main)
     mainThread.start()
@@ -270,7 +271,7 @@ if interactive:
 
         match command:
             case "h" | "help":
-                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username, address and room\nip = print ip\nport = print port\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
+                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username, address and room\nip = print ip\nport = print port\n\nrooms = print number of rooms\nmkroom = makes a new room\nrmroom = removes the last room\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -325,6 +326,9 @@ if interactive:
                 if not removed:
                     print("User not found.")
             case "quit" | "exit":
+                for room in range(len(messageLog)):
+                    logMessage(datetime.datetime.now(), "s", "room removed", room + 1)
+
                 if len(connections) > 1:
                     for conn in list(connections.keys())[1:]:
                         removeConn(conn)
@@ -334,6 +338,50 @@ if interactive:
                 print(ip)
             case "port":
                 print(port)
+            case "rooms":
+                print(numOfRooms)
+            case "mkroom":
+                if numOfRooms == 9:
+                    print("You already have the max number of rooms.")
+                else:
+                    messageLog.append([[datetime.datetime.now(), "s", "room created"]])
+                    numOfRooms += 1
+                    print(f"Room {numOfRooms} has been made.")
+            case "rmroom":
+                if numOfRooms == 1:
+                    print("You already have the minimum number of rooms.")
+                else:
+                    print("Wait 3 seconds.")
+                    for conn in list(connections.keys())[1:]:
+                        if connections[conn]['room'] == numOfRooms:
+                            conn.send(createMessage("s", "This room is being removed by the server in 3 seconds. You will be sent to room 1."))
+
+                    time.sleep(3)
+
+                    for conn in list(connections.keys())[1:]:
+                        if connections[conn]['room'] == numOfRooms:
+                            clearScreen(conn)
+
+                            oldChatRoom = connections[conn]['room']
+
+                            message = f"{connections[conn]['username']} has joined from the removed room {oldChatRoom}."
+                            logMessage(datetime.datetime.now(), "s", message, 1)
+                            for otherConn in connections:
+                                if otherConn != sock and connections[otherConn]['room'] == 1:
+                                    otherConn.send(createMessage("s", message))
+
+                            connections[conn]['room'] = 1
+                            conn.send(createMessage("i", f"You are now in room {connections[conn]['room']}."))
+
+                            message = f"{connections[conn]['username']} has moved to room 1."
+                            logMessage(datetime.datetime.now(), "s", message, oldChatRoom)
+
+                    logMessage(datetime.datetime.now(), "s", "room removed", numOfRooms)
+
+                    messageLog.pop()
+                    numOfRooms -= 1
+                    print(f"Room {numOfRooms + 1} has been removed.")
+
             case _:
                 print("Command not found") 
         print()
