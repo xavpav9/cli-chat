@@ -138,6 +138,8 @@ def main():
                             conn.send(createMessage("i", "The current users online are: \n-    " + "\n-    ".join(getUsernames(True))))
                         elif data.rstrip(" ") == "!quit":
                             removeConn(conn)
+                        elif data.rstrip(" ") == "!help":
+                            conn.send(createMessage("i", "Enter !quit to leave, !users to see a list of users currently online, !chat to see the chat server you are in, ![1-3] to go to a chat server."))
                         elif data.rstrip(" ") == "!chat":
                             conn.send(createMessage("i", f"You are in chat server {connections[conn]['chat-server']}."))
                         elif data[1] in ["1", "2", "3"]:
@@ -151,7 +153,7 @@ def main():
 
                             for otherConn in connections:
                                 if otherConn != sock and connections[otherConn]['chat-server'] == oldChatServer:
-                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has moved to chat server {data[1]}"))
+                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has moved to chat server {data[1]}."))
                         else:
                             conn.send(createMessage("i", "Unknown command"))
                             
@@ -174,7 +176,7 @@ def main():
                     else:
                         connections[conn]["username"] = username
                         logMsg(f"Time: {datetime.datetime.now()} |=> Username: {username} |=> joined", 1)
-                        conn.send(createMessage("i", "Enter !quit to leave or !users to see a list of users currently online or !chat to see the chat server you are in.\n"))
+                        conn.send(createMessage("i", "Enter !help for help.\n"))
                         for otherConn in connections.keys():
                             if otherConn != sock and connections[otherConn]['chat-server'] == 1:
                                 otherConn.send(createMessage("s", f"{username} has joined."))
