@@ -56,7 +56,7 @@ def decodeMessage(conn):
     return text.decode(encoding="UTF-8")
 
 def outputMessages():
-    global connected
+    global connected, messages
     while connected:
         username = decodeMessage(sock)
         if username != None:
