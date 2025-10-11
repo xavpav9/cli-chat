@@ -154,10 +154,10 @@ def main():
                             conn.send(createMessage("i", msg))
                         elif data.rstrip(" ") == "!room":
                             conn.send(createMessage("i", f"You are in room {connections[conn]['room']} out of {numOfRooms}."))
-                        elif data[1] in [str(room + 1) for room in range(numOfRooms)]:
-                            newRoom = int(data[1])
+                        elif data[1:] in [str(room + 1) for room in range(numOfRooms)]:
+                            newRoom = int(data[1:])
                             if data[1] != str(connections[conn]['room']):
-                                conn.send(createMessage("s", "clear"))
+                                conn.send(createMessage("i", "clear"))
                                 conn.send(createMessage("i", "Enter !help for help.\n"))
 
                                 oldChatServer = connections[conn]['room']

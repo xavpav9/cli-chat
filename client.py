@@ -61,7 +61,7 @@ def outputMessages():
         username = decodeMessage(sock)
         if username != None:
             data = decodeMessage(sock)
-            if username == "s" and data == "clear":
+            if username == "i" and data == "clear":
                 messages.clear()
                 refreshDisplay(readline.get_line_buffer())
             else:
