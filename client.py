@@ -60,12 +60,12 @@ def outputMessages():
     while connected:
         username = decodeMessage(sock)
         if username != None:
-            data = decodeMessage(sock)
-            if username == "i" and data == "clear":
+            message = decodeMessage(sock)
+            if username == "i" and message == "clear":
                 messages.clear()
                 refreshDisplay(readline.get_line_buffer())
             else:
-                messages.append(f"{username}>: {data}")
+                messages.append(f"{username}>: {message}")
                 refreshDisplay(readline.get_line_buffer())
         else:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
@@ -73,8 +73,8 @@ def outputMessages():
 
 def refreshDisplay(currentLine):
     os.system("clear") 
-    for msg in messages:
-        print(msg)
+    for message in messages:
+        print(message)
     print("\nyou> " + currentLine, end="", flush=True)
 
 
@@ -91,19 +91,19 @@ outputThread.start()
 
 while connected:
     try:
-        msg = input()
+        message = input()
     except KeyboardInterrupt:
-        msg = "/quit"
+        message = "/quit"
 
     if not connected:
         break
-    elif len(msg) > 1 and msg[0] == "/":
+    elif len(message) > 1 and message[0] == "/":
         refreshDisplay("")
-        sock.send(createPacket(msg).encode(encoding="UTF-8"))
-    elif msg != "":
-        messages.append(f"{username}>: {msg}")
+        sock.send(createPacket(message).encode(encoding="UTF-8"))
+    elif message != "":
+        messages.append(f"{username}>: {message}")
         refreshDisplay("")
-        sock.send(createPacket(msg).encode(encoding="UTF-8"))
+        sock.send(createPacket(message).encode(encoding="UTF-8"))
     else:
         refreshDisplay("")
 
