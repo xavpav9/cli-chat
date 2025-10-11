@@ -143,17 +143,26 @@ def main():
                         elif data.rstrip(" ") == "!chat":
                             conn.send(createMessage("i", f"You are in chat server {connections[conn]['chat-server']}."))
                         elif data[1] in ["1", "2", "3"]:
-                            oldChatServer = connections[conn]['chat-server']
-                            for otherConn in connections:
-                                if otherConn != sock and connections[otherConn]['chat-server'] == int(data[1]):
-                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has joined from chat server {oldChatServer}."))
+                            if data[1] != str(connections[conn]['chat-server']):
+                                oldChatServer = connections[conn]['chat-server']
 
-                            connections[conn]['chat-server'] = int(data[1])
-                            conn.send(createMessage("i", f"You are now in chat server {connections[conn]['chat-server']}."))
+                                msg = f"{connections[conn]['username']} has joined from chat server {oldChatServer}."
+                                logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", int(data[1]))
+                                for otherConn in connections:
+                                    if otherConn != sock and connections[otherConn]['chat-server'] == int(data[1]):
+                                        otherConn.send(createMessage("s", msg))
 
-                            for otherConn in connections:
-                                if otherConn != sock and connections[otherConn]['chat-server'] == oldChatServer:
-                                    otherConn.send(createMessage("s", f"{connections[conn]['username']} has moved to chat server {data[1]}."))
+                                connections[conn]['chat-server'] = int(data[1])
+                                conn.send(createMessage("i", f"You are now in chat server {connections[conn]['chat-server']}."))
+
+                                msg = f"{connections[conn]['username']} has moved to chat server {data[1]}."
+                                logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", oldChatServer)
+                                for otherConn in connections:
+                                    if otherConn != sock and connections[otherConn]['chat-server'] == oldChatServer:
+                                        otherConn.send(createMessage("s", msg))
+                            else:
+                                conn.send(createMessage("i", f"You are already in chat server {int(data[1])}."))
+                                
                         else:
                             conn.send(createMessage("i", "Unknown command"))
                             
@@ -243,12 +252,16 @@ if interactive:
                 else:
                     print(None)
             case "stalk":
-                msg = input("Enter message: ")
-                logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}")
+                chatServer = input("Enter a chat server: ")
+                if chatServer not in ["1", "2", "3"]:
+                    print("Not a valid chat server.")
+                else:
+                    msg = input("Enter message: ")
+                    logMsg(f"Time: {datetime.datetime.now()} |=> Username: s |=> {msg}", int(chatServer))
 
-                for otherConn in connections.keys():
-                    if otherConn != sock:
-                        otherConn.send(createMessage("s", msg))
+                    for otherConn in connections.keys():
+                        if otherConn != sock and connections[otherConn]['chat-server'] == int(chatServer):
+                            otherConn.send(createMessage("s", msg))
             case "log":
                 for message in messageLog:
                     print(message)
