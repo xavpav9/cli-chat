@@ -196,6 +196,7 @@ def main():
                         conn.send(createMessage("i", "Invalid username."))
                         removeConn(conn)
                     elif username in usernames:
+                        conn.send(createMessage("i", "Invalid username."))
                         conn.send(createMessage("i", f"Usernames in use: {', '.join(usernames)}."))
                         removeConn(conn)
                     else:
@@ -255,7 +256,7 @@ if interactive:
 
         match command:
             case "h" | "help":
-                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username and address\nip = print ip\nport = print port\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
+                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username, address and room\nip = print ip\nport = print port\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -268,7 +269,7 @@ if interactive:
                             username = connections[conn]["username"]
                         else:
                             username = None
-                        print(f"Username: \"{username}\", Address: {connections[conn]['address']}")
+                        print(f"Username: \"{username}\", Address: {connections[conn]['address']}, Room: {connections[conn]['room']}")
                 else:
                     print(None)
             case "stalk":
