@@ -157,6 +157,9 @@ def main():
                         elif data[1] in [str(room + 1) for room in range(numOfRooms)]:
                             newRoom = int(data[1])
                             if data[1] != str(connections[conn]['room']):
+                                conn.send(createMessage("s", "clear"))
+                                conn.send(createMessage("i", "Enter !help for help.\n"))
+
                                 oldChatServer = connections[conn]['room']
 
                                 msg = f"{connections[conn]['username']} has joined from room {oldChatServer}."

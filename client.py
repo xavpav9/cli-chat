@@ -61,8 +61,12 @@ def outputMessages():
         username = decodeMessage(sock)
         if username != None:
             data = decodeMessage(sock)
-            messages.append(f"{username}>: {data}")
-            refreshDisplay(readline.get_line_buffer())
+            if username == "s" and data == "clear":
+                messages.clear()
+                refreshDisplay(readline.get_line_buffer())
+            else:
+                messages.append(f"{username}>: {data}")
+                refreshDisplay(readline.get_line_buffer())
         else:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
