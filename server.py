@@ -149,22 +149,22 @@ def main():
                         elif message.rstrip(" ") == "/quit":
                             removeConn(conn)
                         elif message.rstrip(" ") == "/help":
-                            message = "Commands begin with a /. Commands available:\n-    /quit to leave.\n-    /users to see a list of users currently online.\n-    /room to see the room you are in.\n-    /history to view all the messages stored in the current log\n"
+                            message = "Commands begin with a /. Commands available:\n-    /quit to leave.\n-    /users to see a list of users currently online.\n-    /room to see the room you are in.\n-    /history to view all the messages stored in the current log\n-    /clear to clear the current screen"
                             if numOfRooms != 1:
                                 message += "-    /[1-"+str(numOfRooms)+"] to go to that numbered room.\n"
                             conn.send(createMessage("i", message))
                         elif message.rstrip(" ") == "/room":
                             conn.send(createMessage("i", f"You are in room {connections[conn]['room']} out of {numOfRooms}."))
                         elif message.rstrip(" ") == "/history":
-                            conn.send(createMessage("i", "clear"))
-                            conn.send(createMessage("i", "Enter /help for help.\n"))
+                            clearScreen(conn)
                             for data in messageLog[connections[conn]['room'] - 1]:
                                 conn.send(createMessage(data[1], data[2]))
+                        elif message.rstrip(" ") == "/clear":
+                            clearScreen(conn)
                         elif message[1:] in [str(room + 1) for room in range(numOfRooms)]:
                             newRoom = int(message[1:])
                             if message[1] != str(connections[conn]['room']):
-                                conn.send(createMessage("i", "clear"))
-                                conn.send(createMessage("i", "Enter /help for help.\n"))
+                                clearScreen(conn)
 
                                 oldChatServer = connections[conn]['room']
 
@@ -251,6 +251,10 @@ def getUsernames(byChatServer=False):
         return sorted(usernames)
     else:
         return []
+
+def clearScreen(conn):
+    conn.send(createMessage("i", "clear"))
+    conn.send(createMessage("i", "Enter /help for help.\n"))
 
 
 if interactive:
