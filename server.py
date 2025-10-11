@@ -130,7 +130,7 @@ def main():
                     logMsg(f"Time: {datetime.datetime.now()} |=> Username: {connections[conn]['username']} |=> Message: {data}")
 
                     if data == "!users":
-                        conn.send(createMessage("i", f"The current users online are: {"\n>    " + "\n>    ".join(getUsernames())}"))
+                        conn.send(createMessage("i", f"The current users online are: {'\n-    ' + '\n-    '.join(getUsernames())}"))
                     elif data == "!quit":
                         removeConn(conn)
                     else:
