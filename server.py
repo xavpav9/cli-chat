@@ -1,15 +1,13 @@
 import socket, sys, re, select, datetime, time
 from threading import Thread
     
-#Usage - python(3) server.py ip port numOfRooms
-
-interactive = input("Would you like the server to be interactive (y/n)?: ").lower()
-interactive = interactive == "y"
+#Usage - python(3) server.py ip port numOfRooms interactive(y/n)
 
 HEADERSIZE = 5
 
-if len(sys.argv) != 4:
-    print("Must provide IP address, port number and how many rooms you want.")
+if len(sys.argv) != 5:
+    print("Usage - python(3) server.py ip port numOfRooms interactive(y/n)")
+    print("Must provide IP address, port number, how many rooms you want and whether you want the server to be interactive (y) or not (n).")
     sys.exit()
 else:
     try:
@@ -40,6 +38,16 @@ else:
         print("Problem with number of rooms:")
         print(error)
         sys.exit()
+
+    try:
+        if sys.argv[4].lower() not in ["n", "no", "y", "yes"]:
+            raise Exception("Interactivity must be y or n")
+        interactive = sys.argv[4] in ["y", "yes"]
+    except Exception as error:
+        print("Problem with interactivity:")
+        print(error)
+        sys.exit()
+
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
