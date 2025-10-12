@@ -1,4 +1,4 @@
-import socket, sys, re, readline, os
+import socket, sys, re, readline, os, datetime
 from threading import Thread
 
 #Usage - python(3) server.py ip port
@@ -58,23 +58,40 @@ def decodeMessage(conn):
 def outputMessages():
     global connected, messages
     while connected:
-        username = decodeMessage(sock)
-        if username != None:
-            message = decodeMessage(sock)
-            if username == "i" and message == "clear":
-                messages.clear()
-                refreshDisplay(readline.get_line_buffer())
-            else:
-                messages.append(f"{username}>: {message}")
-                refreshDisplay(readline.get_line_buffer())
-        else:
+        time = decodeMessage(sock)
+        if time == None:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
+        else:
+            username = decodeMessage(sock)
+            if username != None:
+                message = decodeMessage(sock)
+                if username == "i":
+                    if message == "clear":
+                        messages.clear()
+                    else:
+                        messages.append(["---->", username, message])
+                        refreshDisplay(readline.get_line_buffer())
+                else:
+                    messages.append([time, username, message])
+                    refreshDisplay(readline.get_line_buffer())
 
 def refreshDisplay(currentLine):
+    def formatMessage(time, username, message):
+        if time == "0":
+            return f"{username}>: {message}"
+        else:
+            return f"{time} {username}>: {message}" 
+
     os.system("clear") 
-    for message in messages:
-        print(message)
+    if len(messages) != 0:
+        print(formatMessage(messages[0][0], messages[0][1], messages[0][2]))
+        for messageIndex in range(1, len(messages)):
+            time = messages[messageIndex][0]
+            if messages[messageIndex][0] == messages[messageIndex - 1][0] and messages[messageIndex][1] != "i":
+                time = f"{'=':^5}"
+            print(formatMessage(time, messages[messageIndex][1], messages[messageIndex][2]))
+
     print("\nyou> " + currentLine, end="", flush=True)
 
 
@@ -101,10 +118,10 @@ while connected:
         refreshDisplay("")
         sock.send(createPacket(message).encode(encoding="UTF-8"))
     elif len(message) > 1023:
-        messages.append(f"i>: Message above char limit of 1023.")
+        messages.append(["---->", "i", "Message above char limit of 1023."])
         refreshDisplay("")
     elif message != "":
-        messages.append(f"{username}>: {message}")
+        messages.append([datetime.datetime.now().strftime("%H:%M"), username, message])
         refreshDisplay("")
         sock.send(createPacket(message).encode(encoding="UTF-8"))
     else:

@@ -1,4 +1,5 @@
-import socket, sys, re, select, datetime, time
+import socket, sys, re, select, datetime
+from time import sleep
 from threading import Thread
     
 #Usage - python(3) server.py ip port numOfRooms interactive(y/n)
@@ -68,7 +69,8 @@ def removeConn(conn, logInfo="has left"):
             username = connections[conn]["username"]
             message = f"{username} {logInfo}."
             chatServer = connections[conn]["room"]
-            logMessage(datetime.datetime.now(), "s", message, chatServer)
+            time = datetime.datetime.now()
+            logMessage(time, "s", message, chatServer)
             log(f"Terminated connection: {conn}")
 
         try:
@@ -81,13 +83,13 @@ def removeConn(conn, logInfo="has left"):
         if username != "":
             for otherConn in connections.keys():
                 if otherConn != sock and connections[otherConn]['room'] == chatServer:
-                    otherConn.send(createMessage("s", message))
+                    otherConn.send(createMessage("s", message, time))
 
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
 
-def createMessage(username, message):
-    return f"{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
+def createMessage(username, message, time=datetime.datetime.now()):
+    return f"{createPacket(time.strftime("%H:%M"))}{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
 
 def decodeMessage(conn):
     try:
@@ -186,20 +188,20 @@ def main():
 
                     if message[0] == "/" and len(message) > 1:
                         if message.rstrip(" ") == "/users":
-                            conn.send(createMessage("i", "The current users online are: \n-    " + "\n-    ".join(getUsernames(True))))
+                            conn.send(createMessage("i", "The current users online are: \n      -    " + "\n      -    ".join(getUsernames(True))))
                         elif message.rstrip(" ") == "/quit":
                             removeConn(conn)
                         elif message.rstrip(" ") == "/help":
-                            message = "Commands begin with a /. Commands available:\n-    /quit to leave.\n-    /users to see a list of users currently online.\n-    /room to see the room you are in.\n-    /history to view all the messages stored in the current log\n-    /clear to clear the current screen\n"
+                            message = "Commands begin with a /. Commands available:\n      -    /quit to leave.\n      -    /users to see a list of users currently online.\n      -    /room to see the room you are in.\n      -    /history to view all the messages stored in the current log\n      -    /clear to clear the current screen"
                             if numOfRooms != 1:
-                                message += "-    /[1-"+str(numOfRooms)+"] to go to that numbered room.\n"
+                                message += "\n      -    /[1-"+str(numOfRooms)+"] to go to that numbered room."
                             conn.send(createMessage("i", message))
                         elif message.rstrip(" ") == "/room":
                             conn.send(createMessage("i", f"You are in room {connections[conn]['room']} out of {numOfRooms}."))
                         elif message.rstrip(" ") == "/history":
                             clearScreen(conn)
                             for data in messageLog[connections[conn]['room'] - 1]:
-                                conn.send(createMessage(data[1], data[2]))
+                                conn.send(createMessage(data[1], data[2], data[0]))
                         elif message.rstrip(" ") == "/clear":
                             clearScreen(conn)
                         elif message[1:] in [str(room + 1) for room in range(numOfRooms)]:
@@ -210,19 +212,20 @@ def main():
                                 oldChatRoom = connections[conn]['room']
 
                                 message = f"{connections[conn]['username']} has joined from room {oldChatRoom}."
-                                logMessage(datetime.datetime.now(), "s", message, newRoom)
+                                time = datetime.datetime.now()
+                                logMessage(time, "s", message, newRoom)
                                 for otherConn in connections:
                                     if otherConn != sock and connections[otherConn]['room'] == newRoom:
-                                        otherConn.send(createMessage("s", message))
+                                        otherConn.send(createMessage("s", message, time))
 
                                 connections[conn]['room'] = newRoom
                                 conn.send(createMessage("i", f"You are now in room {connections[conn]['room']}."))
 
                                 message = f"{connections[conn]['username']} has moved to room {newRoom}."
-                                logMessage(datetime.datetime.now(), "s", message, oldChatRoom)
+                                logMessage(time, "s", message, oldChatRoom)
                                 for otherConn in connections:
                                     if otherConn != sock and connections[otherConn]['room'] == oldChatRoom:
-                                        otherConn.send(createMessage("s", message))
+                                        otherConn.send(createMessage("s", message, time))
                             else:
                                 conn.send(createMessage("i", f"You are already in room {newRoom}."))
                                 
@@ -233,10 +236,11 @@ def main():
                         if len(message) > 1023:
                             conn.send(createMessage("i", "Message above char limit of 1023."))
                         else:
-                            logMessage(datetime.datetime.now(), connections[conn]['username'], message, connections[conn]['room'])
+                            time = datetime.datetime.now()
+                            logMessage(time, connections[conn]['username'], message, connections[conn]['room'])
                             for otherConn in connections.keys():
                                 if otherConn != sock and otherConn != conn and connections[otherConn]['room'] == connections[conn]['room']:
-                                    otherConn.send(createMessage(connections[conn]["username"], message))
+                                    otherConn.send(createMessage(connections[conn]["username"], message, time))
                 else:
                     username = message
                     log(f"Username: {username} for {connections[conn]['address']}")
@@ -253,11 +257,12 @@ def main():
                     else:
                         connections[conn]["username"] = username
                         message = f"{username} has joined."
-                        logMessage(datetime.datetime.now(), "s", message, 1)
+                        time = datetime.datetime.now()
+                        logMessage(time, "s", message, 1)
                         conn.send(createMessage("i", "Enter /help for help.\n"))
                         for otherConn in connections.keys():
                             if otherConn != sock and connections[otherConn]['room'] == 1:
-                                otherConn.send(createMessage("s", message))
+                                otherConn.send(createMessage("s", message, time))
 
 for room in range(numOfRooms):
     messageLog.append([])
@@ -302,18 +307,20 @@ if interactive:
                 else:
                     message = input("Enter message: ")
                     if newRoom == "a":
-                        logMessage(datetime.datetime.now(), "s", message, "a")
+                        time = datetime.datetime.now()
+                        logMessage(time, "s", message, "a")
 
                         for otherConn in connections.keys():
                             if otherConn != sock:
-                                otherConn.send(createMessage("s", message))
+                                otherConn.send(createMessage("s", message, time))
                     else:
                         newRoom = int(newRoom)
-                        logMessage(datetime.datetime.now(), "s", message, newRoom)
+                        time = datetime.datetime.now()
+                        logMessage(time, "s", message, newRoom)
 
                         for otherConn in connections.keys():
                             if otherConn != sock and connections[otherConn]['room'] == newRoom:
-                                otherConn.send(createMessage("s", message))
+                                otherConn.send(createMessage("s", message, time))
             case "log":
                 for room in range(len(messageLog)):
                     if len(messageLog[room]) != 0:
@@ -326,7 +333,7 @@ if interactive:
                 for conn in list(connections.keys())[1:]:
                     if "username" in connections[conn].keys():
                         if connections[conn]["username"] == user:
-                            conn.send(createMessage("s", "You have been kicked by the server."))
+                            conn.send(createMessage("i", "You have been kicked by the server."))
                             print(f"\"{connections[conn]['username']}\" has been removed.")
                             removeConn(conn, "has been kicked")
                             removed = True
@@ -352,19 +359,28 @@ if interactive:
                 if numOfRooms == 9:
                     print("You already have the max number of rooms.")
                 else:
-                    messageLog.append([[datetime.datetime.now(), "s", "room created"]])
                     numOfRooms += 1
+                    try:
+                        open(f"log{numOfRooms}.txt", "x")
+                    except:
+                        pass
+                    messageLog.append([])
+                    logMessage(datetime.datetime.now(), "s", "room created", numOfRooms)
                     print(f"Room {numOfRooms} has been made.")
             case "rmroom":
                 if numOfRooms == 1:
                     print("You already have the minimum number of rooms.")
                 else:
                     print("Wait 3 seconds.")
+                    message = "This room is being removed by the server in 3 seconds. You will be sent to room 1."
+                    time = datetime.datetime.now()
+                    logMessage(time, "s", message, numOfRooms)
+
                     for conn in list(connections.keys())[1:]:
                         if connections[conn]['room'] == numOfRooms:
-                            conn.send(createMessage("s", "This room is being removed by the server in 3 seconds. You will be sent to room 1."))
+                            conn.send(createMessage("s", message, time))
 
-                    time.sleep(3)
+                    sleep(3)
 
                     for conn in list(connections.keys())[1:]:
                         if connections[conn]['room'] == numOfRooms:
@@ -373,10 +389,11 @@ if interactive:
                             oldChatRoom = connections[conn]['room']
 
                             message = f"{connections[conn]['username']} has joined from the removed room {oldChatRoom}."
-                            logMessage(datetime.datetime.now(), "s", message, 1)
+                            time = datetime.datetime.now()
+                            logMessage(time, "s", message, 1)
                             for otherConn in connections:
                                 if otherConn != sock and connections[otherConn]['room'] == 1:
-                                    otherConn.send(createMessage("s", message))
+                                    otherConn.send(createMessage("s", message, time))
 
                             connections[conn]['room'] = 1
                             conn.send(createMessage("i", f"You are now in room {connections[conn]['room']}."))
