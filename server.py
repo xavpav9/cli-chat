@@ -189,10 +189,10 @@ def main():
                     if message[0] == "/" and len(message) > 1:
                         if message.rstrip(" ") == "/users":
                             conn.send(createMessage("i", "The current users online are: \n      -    " + "\n      -    ".join(getUsernames(True))))
-                        elif message.rstrip(" ") == "/quit":
+                        elif message.rstrip(" ") in ["/quit", "/exit"]:
                             removeConn(conn)
                         elif message.rstrip(" ") == "/help":
-                            message = "Commands begin with a /. Commands available:\n      -    /quit to leave.\n      -    /users to see a list of users currently online.\n      -    /room to see the room you are in.\n      -    /history to view all the messages stored in the current log\n      -    /clear to clear the current screen"
+                            message = "Commands begin with a /. Commands available:\n      -    /quit or /exit to leave.\n      -    /users to see a list of users currently online.\n      -    /room to see the room you are in.\n      -    /history to view all the messages stored in the current log\n      -    /clear to clear the current screen"
                             if numOfRooms != 1:
                                 message += "\n      -    /[1-"+str(numOfRooms)+"] to go to that numbered room."
                             conn.send(createMessage("i", message))
@@ -284,7 +284,7 @@ if interactive:
 
         match command:
             case "h" | "help":
-                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username, address and room\nip = print ip\nport = print port\n\nrooms = print number of rooms\nmkroom = makes a new room\nrmroom = removes the last room\n\nstalk = send out a message as the server\nlog = list current log\nkick = kick a player")
+                print("h/help = this menu\nquit/exit = close server\n\nlc = list connections\nla = list connections by username, address and room\nip = print ip\nport = print port\n\nrooms = print number of rooms\nmkroom = makes a new room\nrmroom = removes the last room\n\natalk = send out a message as the server\nlog = list current log\nkick = kick a player")
             case "lc":
                 print(f"server: {list(connections.keys())[0]}")
                 if len(connections) > 1:
@@ -300,7 +300,7 @@ if interactive:
                         print(f"Username: \"{username}\", Address: {connections[conn]['address']}, Room: {connections[conn]['room']}")
                 else:
                     print(None)
-            case "stalk":
+            case "atalk":
                 newRoom = input("Enter a room (a=all): ")
                 if newRoom not in [str(room + 1) for room in range(numOfRooms)] and newRoom != "a":
                     print("Not a valid room.")
@@ -308,19 +308,19 @@ if interactive:
                     message = input("Enter message: ")
                     if newRoom == "a":
                         time = datetime.datetime.now()
-                        logMessage(time, "s", message, "a")
+                        logMessage(time, "a", message, "a")
 
                         for otherConn in connections.keys():
                             if otherConn != sock:
-                                otherConn.send(createMessage("s", message, time))
+                                otherConn.send(createMessage("a", message, time))
                     else:
                         newRoom = int(newRoom)
                         time = datetime.datetime.now()
-                        logMessage(time, "s", message, newRoom)
+                        logMessage(time, "a", message, newRoom)
 
                         for otherConn in connections.keys():
                             if otherConn != sock and connections[otherConn]['room'] == newRoom:
-                                otherConn.send(createMessage("s", message, time))
+                                otherConn.send(createMessage("a", message, time))
             case "log":
                 for room in range(len(messageLog)):
                     if len(messageLog[room]) != 0:
