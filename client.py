@@ -115,7 +115,6 @@ while connected:
     if not connected:
         break
     elif len(message) > 1 and message[0] == "/":
-        refreshDisplay("")
         sock.send(createPacket(message).encode(encoding="UTF-8"))
     elif len(message) > 1023:
         messages.append(["---->", "i", "Message above char limit of 1023."])

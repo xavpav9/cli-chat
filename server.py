@@ -89,7 +89,7 @@ def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
 
 def createMessage(username, message, time=datetime.datetime.now()):
-    return f"{createPacket(time.strftime("%H:%M"))}{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
+    return f"{createPacket(time.strftime('%H:%M'))}{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
 
 def decodeMessage(conn):
     try:
