@@ -1,9 +1,10 @@
-import socket, sys, re, readline, os, datetime
+import socket, sys, re, readline, os, datetime, pickle
 from threading import Thread
 
 #Usage - python(3) server.py ip port
 
 HEADERSIZE = 5
+TZ = datetime.datetime.now().astimezone().tzinfo
 messages = []
 
 if len(sys.argv) != 3:
@@ -40,7 +41,7 @@ while len(username) < 2 or len(username) > 15 or " " in username:
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
 
-def decodeMessage(conn):
+def decodeMessage(conn, pickles=False):
     header = conn.recv(HEADERSIZE)
     if header == b"":
         return None
@@ -53,12 +54,16 @@ def decodeMessage(conn):
     part = conn.recv(length % 8)
     text += part
 
-    return text.decode(encoding="UTF-8")
+    if pickles:
+        print(text)
+        return pickle.loads(text).astimezone(TZ).strftime("%H:%M")
+    else:
+        return text.decode(encoding="UTF-8")
 
 def outputMessages():
     global connected, messages
     while connected:
-        time = decodeMessage(sock)
+        time = decodeMessage(sock, True)
         if time == None:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
@@ -120,7 +125,7 @@ while connected:
         messages.append(["---->", "i", "Message above char limit of 1023."])
         refreshDisplay("")
     elif message != "":
-        messages.append([datetime.datetime.now().strftime("%H:%M"), username, message])
+        messages.append([datetime.datetime.now().astimezone(TZ).strftime("%H:%M"), username, message])
         refreshDisplay("")
         sock.send(createPacket(message).encode(encoding="UTF-8"))
     else:
