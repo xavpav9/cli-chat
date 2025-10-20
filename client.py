@@ -55,7 +55,6 @@ def decodeMessage(conn, pickles=False):
     text += part
 
     if pickles:
-        print(text)
         return pickle.loads(text).astimezone(TZ).strftime("%H:%M")
     else:
         return text.decode(encoding="UTF-8")
