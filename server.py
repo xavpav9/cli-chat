@@ -1,4 +1,4 @@
-import socket, sys, re, select, datetime, pickle
+import socket, sys, re, select, datetime
 from time import sleep
 from threading import Thread
     
@@ -85,15 +85,12 @@ def removeConn(conn, logInfo="has left"):
                 if otherConn != sock and connections[otherConn]['room'] == chatServer:
                     otherConn.send(createMessage("s", message, time))
 
-def createPacket(text, pickles=False):
-    if pickles:
-        encodedText = pickle.dumps(text)
-        return f"{len(encodedText):<{HEADERSIZE}}".encode(encoding="UTF-8") + encodedText
-    else:
-        return f"{len(text):<{HEADERSIZE}}{text}"
+def createPacket(text):
+    return f"{len(text):<{HEADERSIZE}}{text}"
 
 def createMessage(username, message, time=datetime.datetime.now(datetime.timezone.utc)):
-    return createPacket(time, True) + f"{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
+    formattedTime = f"{time.year}:{time.month}:{time.day}:{time.hour}:{time.minute}:{time.second}:{time.microsecond}"
+    return f"{createPacket(formattedTime)}{createPacket(username)}{createPacket(message)}".encode(encoding="UTF-8")
 
 def decodeMessage(conn):
     try:
@@ -128,7 +125,7 @@ def logMessage(time, username, message, room):
             for i in range(len(lines)):
                 lines[i] = lines[i].strip("\n")
 
-            lines.append(f"Time: {data[0]} |=> Username: {data[1]} |=> Message: {data[2]}")
+            lines.append(f"Time: {time} |=> Username: {data[1]} |=> Message: {data[2]}")
 
         with open(f"log{room}.txt", "w") as file:
             file.write("\n".join(lines) + "\n")

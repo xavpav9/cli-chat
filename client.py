@@ -1,4 +1,4 @@
-import socket, sys, re, readline, os, datetime, pickle
+import socket, sys, re, readline, os, datetime
 from threading import Thread
 
 #Usage - python(3) server.py ip port
@@ -41,7 +41,7 @@ while len(username) < 2 or len(username) > 15 or " " in username:
 def createPacket(text):
     return f"{len(text):<{HEADERSIZE}}{text}"
 
-def decodeMessage(conn, pickles=False):
+def decodeMessage(conn):
     header = conn.recv(HEADERSIZE)
     if header == b"":
         return None
@@ -54,19 +54,17 @@ def decodeMessage(conn, pickles=False):
     part = conn.recv(length % 8)
     text += part
 
-    if pickles:
-        return pickle.loads(text).astimezone(TZ).strftime("%H:%M")
-    else:
-        return text.decode(encoding="UTF-8")
+    return text.decode(encoding="UTF-8")
 
 def outputMessages():
     global connected, messages
     while connected:
-        time = decodeMessage(sock, True)
+        time = decodeMessage(sock)
         if time == None:
             print("Connection has been terminated. Enter <C-c> or <CR> to exit.")
             connected = False
         else:
+            time = datetime.datetime(*[int(i) for i in time.split(":")], datetime.timezone.utc).astimezone(TZ).strftime("%H:%M")
             username = decodeMessage(sock)
             if username != None:
                 message = decodeMessage(sock)
